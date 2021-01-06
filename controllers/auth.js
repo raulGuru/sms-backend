@@ -1,4 +1,4 @@
-const { body, validationResult, sanitizeBody } = require("express-validator");
+const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -94,16 +94,15 @@ exports.login = [
               function (err, same) {
                 if (same) {
                   if (user.status) {
-                    const expiresIn = process.env.JWT_TIMEOUT_DURATION;
                     let userData = {
                       userId: user._id,
                       email: user.email,
                       name: user.name,
                     };
                     userData.token = jwt.sign(userData, process.env.JWT_KEY, {
-                      expiresIn,
+                      expiresIn: "1h",
                     });
-                    userData.expiresIn = expiresIn;
+                    userData.expiresIn = 3600;
                     return res.status(200).json({
                       status: 1,
                       message: "Login Success",
@@ -167,25 +166,25 @@ exports.resetpassword = [
         UserModel.findOne({ email: email }).then((user) => {
           if (user) {
             if (user._id.toString() === userId.toString()) {
-              bcrypt.hash(password, 10, function (err, hash) {
-                Object.assign(user, { password: hash });
-                user.save(function (err) {
-                  if (err) {
-                    return {
-                      status: 0,
-                      message: "User Error",
-                      data: err,
-                    };
-                  }
-                  return res.status(200).json({
-                    status: 1,
-                    message: "Password reset successfully",
-                    data: user.email,
-                  });
-                });
-              });
-              /*
-              jwt.verify(token, process.env.JWT_KEY, (err, verifiedJwt) => {
+              // bcrypt.hash(password, 10, function (err, hash) {
+              //   Object.assign(user, { password: hash });
+              //   user.save(function (err) {
+              //     if (err) {
+              //       return {
+              //         status: 0,
+              //         message: "User Error",
+              //         data: err,
+              //       };
+              //     }
+              //     return res.status(200).json({
+              //       status: 1,
+              //       message: "Password reset successfully",
+              //       data: user.email,
+              //     });
+              //   });
+              // });
+
+              jwt.verify(token, process.env.JWT_KEY, (err, decodedToken) => {
                 if (err) {
                   console.log(err);
                   return res.status(200).json({
@@ -212,7 +211,6 @@ exports.resetpassword = [
                   });
                 }
               });
-*/
             } else {
               return res.status(200).json({
                 status: 0,
